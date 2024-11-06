@@ -1,6 +1,7 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { useState } from 'react';
+import { ERROR_MSG } from '../constants';
 
 export const meta: MetaFunction = () => {
   return [
@@ -27,16 +28,40 @@ export const loader = async () => {
 export default function Index() {
   const [issues, setIssue] = useState(useLoaderData() as Issue[]);
   const [issueText, setIssueText] = useState("" as string);
+  const [warningMsg, setWarningMsg] = useState("" as string);
 
   /**
    * イシュー追加
    */
   function addIssue() {
-    if (issueText!==""){
+    let msg:string = "";
+    try {
+      if (issueText === ""){
+        throw new Error(ERROR_MSG.ERROR_EMPTY_ISSUE);
+      }
+
+      if (typeof existTitle(issues) !== "undefined"){
+        throw new Error(ERROR_MSG.ERROR_DUPLICATE_ISSUE);
+      }
+
       issues.push({title : issueText});
       const newIssues = [...issues];
       setIssue(newIssues);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        msg = e.message;
+      }
     }
+
+    setWarningMsg(msg);
+  }
+
+  /**
+   * イシューの重複チェック
+   * @returns undefined | Issue
+   */
+  function existTitle(issues:Issue[]): undefined | Issue {
+    return issues.find(({ title })=>{console.log(title, issueText); return title === issueText})
   }
 
   /**
@@ -53,6 +78,7 @@ export default function Index() {
           <input name="issue" type="text" value={issueText} onChange={event => setIssueText(event.target.value)} />
           <button type="button" onClick={addIssue}>登録</button>
         </Form>
+        <div>{warningMsg}</div>
         <div>
         {issues.map((issue, index) => (
           <div
