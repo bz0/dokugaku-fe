@@ -21,6 +21,10 @@ export const loader = async () => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  // todo:バリデーション実装
+  // todo:イシューの重複チェックしたい
+  // todo:最後に全件取得する処理なくしたいがなるべく処理をシンプルに保つためにもこの構造でよいか？
+  // todo:actionがごちゃごちゃしているので構造化したい（repostioryパターン使う？？）
   const form = await request.formData();
   console.log("---- action ----", form)
 
@@ -67,7 +71,12 @@ function existTitle(issues:Issue[]): undefined | Issue {
 */
 
 export default function Index() {
+  // todo:再レンダリングが無駄に走っているので減らす or 範囲を狭める
+  // todo:登録ボタン押したら入力内容をクリアする
+  // todo:レンダリングを何度も繰り返す形をReactが採用しているのは何故？どういうメリットがある？
+
   const [issueText, setIssueText] = useState("" as string);
+
   const fetcher = useFetcher();
   const loader:Issue[] = useLoaderData<typeof loader>();
   const issues = fetcher.data as Issue[] ?? loader;
