@@ -1,5 +1,6 @@
-import type { MetaFunction } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
+import type { MetaFunction, ActionFunctionArgs } from "@remix-run/node";
+// import { redirect } from "@remix-run/node";
+import { useLoaderData, useFetcher, json } from "@remix-run/react";
 import { useState } from 'react';
 import { ERROR_MSG } from '../constants';
 
@@ -16,79 +17,84 @@ type Issue = {
 }
 
 export const loader = async () => {
-  return [{
-    id:1,
-    title:"筋トレ"
-  },{
-    id:2,
-    title:"寝る"
-  }]
+  return await fetch("http://localhost:8000/issue");
 };
 
-export default function Index() {
-  const [issues, setIssue] = useState(useLoaderData() as Issue[]);
-  const [issueText, setIssueText] = useState("" as string);
-  const [warningMsg, setWarningMsg] = useState("" as string);
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const form = await request.formData();
+  console.log("---- action ----", form)
 
-  /**
-   * イシュー追加
-   */
-  function addIssue() {
-    let msg:string = "";
-    try {
-      if (issueText === ""){
-        throw new Error(ERROR_MSG.ERROR_EMPTY_ISSUE);
-      }
+  if (form.get('type') === "addIssue") {
+    const title = form.get('title');
+    if (title === ""){
+      return json({ errors: { title: ERROR_MSG.ERROR_EMPTY_ISSUE } }, { status: 422 });
+    }
+  
+    await fetch("http://localhost:8000/issue", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ title: title })
+    });
+  }
 
-      if (typeof existTitle(issues) !== "undefined"){
-        throw new Error(ERROR_MSG.ERROR_DUPLICATE_ISSUE);
-      }
-
-      issues.push({title : issueText});
-      const newIssues = [...issues];
-      setIssue(newIssues);
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        msg = e.message;
-      }
+  if (form.get('type') === "deleteIssue") {
+    const id = form.get('id');
+    if (id === ""){
+      return json({ errors: { title: ERROR_MSG.ERROR_EMPTY_ISSUE } }, { status: 422 });
     }
 
-    setWarningMsg(msg);
+    const res = await fetch("http://localhost:8000/issue?issue_id=" + id, {
+      method: "DELETE"
+    });
+
+    console.log("---- delete ----", res)
   }
 
-  /**
-   * イシューの重複チェック
-   * @returns undefined | Issue
-   */
-  function existTitle(issues:Issue[]): undefined | Issue {
-    return issues.find(({ title })=>{console.log(title, issueText); return title === issueText})
-  }
+  return await fetch("http://localhost:8000/issue");
+};
 
-  /**
-   * イシュー削除
-   */
-  function deleteIssue() {
-    issues.push({title : issueText});
-  }
+
+/**
+ * イシューの重複チェック
+ * @returns undefined | Issue
+ */
+/*
+function existTitle(issues:Issue[]): undefined | Issue {
+  return issues.find(({ title })=>{return title === issueText})
+}
+*/
+
+export default function Index() {
+  const [issueText, setIssueText] = useState("" as string);
+  const fetcher = useFetcher();
+  const loader:Issue[] = useLoaderData<typeof loader>();
+  const issues = fetcher.data as Issue[] ?? loader;
+  console.log("---- index ----", issues)
 
   return (
     <div className="flex h-screen items-center justify-center">
       <div className="flex flex-col items-center gap-16">
-        <Form method="post">
-          <input name="issue" type="text" value={issueText} onChange={event => setIssueText(event.target.value)} />
-          <button type="button" onClick={addIssue}>登録</button>
-        </Form>
-        <div>{warningMsg}</div>
+        <fetcher.Form method="post">
+          <input name="type" type="hidden" value="addIssue"/>
+          <input name="title" type="text" value={issueText} onChange={event => setIssueText(event.target.value)} />
+          <button type="submit" /*onClick={addIssue}*/>登録</button>
+        </fetcher.Form>
         <div>
-        {issues.map((issue, index) => (
+        {issues.map((issue:Issue, index:number) => (
           <div
             key={index}
             className="flex items-center border-b border-gray-300 py-2"
           >
             <div className="flex-grow">{issue.title}</div>
             <div>
-              <button onClick={deleteIssue}>削除</button>
-          </div>
+              <fetcher.Form method="delete">
+                <input name="type" type="hidden" value="deleteIssue"/>
+                <input name="id" type="hidden" value={issue.id} />
+                <button type="submit">削除</button>
+              </fetcher.Form>
+            </div>
           </div>
         ))}
         </div>
