@@ -110,10 +110,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     // 削除
     executeMethodById(id, nodes, node => {
-      if (node.parent) {
-          node.parent.removeNode(node);
+      if (node.parent) { // 削除時親が存在していれば
+          node.parent.removeNode(node); // 親が持つ子要素リストから自身を削除、自身の子要素を親にセット
       }
+      // 自身を削除
+      delete nodes[id];
     });
+
+    // todo:delete時自身を削除+子要素の位置を変える為の更新処理のトランザクションを張りたいのでリクエストを複数に分けずまとめる
     const res = await fetch("http://localhost:8000/issue?issue_id=" + id, {
       method: "DELETE"
     });

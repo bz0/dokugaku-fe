@@ -33,13 +33,13 @@ const createNode = (id: number, nodeName: string): IssueNode => {
             if (this.parent === null) return 0;
             return this.parent.getDepth() + 1;
         },
-        removeNode(node: IssueNode) {
-            const index = this.childrenArray.indexOf(node);
-            if (index !== -1) {
-                this.childrenArray.splice(index, 1);
+        removeNode(node: IssueNode) { // 引数：削除対象の要素
+            const index = this.childrenArray.indexOf(node); // thisは削除対象の要素の親　親の子要素リストの中の位置を取得
+            if (index !== -1) { // 削除対象の要素が存在していれば
+                this.childrenArray.splice(index, 1); // 親の子要素リストから自身を削除
                 node.childrenArray.forEach(child => {
-                    child.parent = this;
-                    this.childrenArray.push(child);
+                    child.parent = this; // 自身の親を子にセット
+                    this.childrenArray.push(child); // 親の子要素にセット
                 });
                 node.childrenArray = [];
                 node.parent = null;
