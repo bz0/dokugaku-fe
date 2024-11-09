@@ -59,7 +59,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (id === null) {
       throw new Error('id取得失敗');
     }
-    // todo:2段下にいるとき1段飛ばしてrootまでいってしまう
+
     executeMethodById(id, nodes, node => node.moveUp());
     await fetch("http://localhost:8000/issue/" + id, {
       method: "PUT",
