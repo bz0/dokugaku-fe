@@ -200,9 +200,9 @@ describe("moveDown", () => {
             parent_id: 3
         }]
 
-        const { nodes } = createHierarchy(issues);
+        const { roots, nodes } = createHierarchy(issues);
         const id = 3;
-        executeMethodById(id, nodes, node => node.moveUp());
+        executeMethodById(id, nodes, node => node.moveDown(roots));
 
         const results:Issue[] = [];
         const keys: number[] = Object.keys(nodes).map(key => Number(key));
